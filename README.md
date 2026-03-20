@@ -1,40 +1,52 @@
 # 🖥️ Visual 8086 Assembly Simulator
 
-An interactive, browser-based environment for learning 8086 assembly programming with real-time CPU visualization. Write assembly code and watch the CPU come to life as your program executes!
+An interactive, browser-based environment for learning 8086 assembly programming with real-time CPU visualization. Write assembly code and watch the CPU come to life — step by step, pin by pin!
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.12-blue.svg)
 ![React](https://img.shields.io/badge/react-18.3-blue.svg)
 ![TypeScript](https://img.shields.io/badge/typescript-5.5-blue.svg)
 
+> **Made by [Rudraksh Rakesh Zodage](https://github.com/RudrakshRakeshZodage)**
+
+---
+
 ## ✨ Features
 
 ### 🎯 Real-Time Visualization
-- **Live Register Panel**: Watch all 8086 registers (AX, BX, CX, DX, SI, DI, BP, SP, segment registers) update in real-time
-- **Dynamic ALU Display**: See arithmetic and logic operations as they happen with operands and results
-- **Memory Viewer**: Visualize memory contents with 512-byte display range
-- **Flags Panel**: Monitor all CPU flags (CF, PF, AF, ZF, SF, OF, etc.) during execution
-- **Memory Access Tracker**: See read/write operations with highlighted addresses
+- **Live Register Panel**: All 12 registers (AX, BX, CX, DX, SI, DI, BP, SP, CS, DS, ES, SS) displayed in a compact 4-column grid
+- **Memory Viewer**: 512-byte RAM workspace with highlighted memory access
+- **Flags Panel**: Monitor all CPU flags (CF, PF, AF, ZF, SF, OF, etc.) live
+- **Execution Dashboard**: After each instruction, see exactly what changed — registers, flags, and memory
+
+### ⚙️ Hardware Pin Visualization (3D)
+- **3D 8086 Chip**: An interactive 3D model of the Intel 8086 DIP-40 chip showing all 40 pins
+- **Live Pin State**: Active pins (RD, WR, ALE, AD0–AD15, VCC, CLK) are highlighted in real-time
+- **"Why this pin?"**: The dashboard explains *exactly why* each pin is used for the current instruction
+  - e.g., "ALE pulses to latch the address. RD goes LOW to read from memory."
 
 ### 💻 Code Editor
-- **Syntax Highlighting**: Monaco Editor with assembly language support
-- **Line Tracking**: Current instruction pointer (IP) highlighted during execution
-- **IntelliSense**: Auto-complete support for 8086 instructions
+- **Syntax Highlighting**: Monaco Editor with 8086 assembly support
+- **Line Tracking**: Current Instruction Pointer (IP) is highlighted during execution
+- **IntelliSense**: Auto-complete for instructions
 
 ### 🎮 Execution Controls
 - **Step-by-Step**: Execute one instruction at a time
-- **Run Mode**: Auto-execute with adjustable speed (50ms - 2000ms)
-- **Pause/Resume**: Control execution flow
-- **Reset**: Restore CPU to initial state
+- **Run Mode**: Auto-execute with configurable speed (50ms–2000ms)
+- **Pause / Resume / Reset**
 
 ### 🔧 Supported Instructions
 
-**Data Transfer**: `MOV`, `PUSH`, `POP`  
-**Arithmetic**: `ADD`, `SUB`, `INC`, `DEC`  
-**Logic**: `AND`, `OR`, `XOR`, `NOT`  
-**Comparison**: `CMP`  
-**Control Flow**: `JMP`, `JZ/JE`, `JNZ/JNE`, `CALL`, `RET`, `LOOP`  
-**System**: `NOP`, `HLT`  
+| Category | Instructions |
+|---|---|
+| Data Transfer | `MOV`, `PUSH`, `POP` |
+| Arithmetic | `ADD`, `SUB`, `INC`, `DEC` |
+| Logic | `AND`, `OR`, `XOR`, `NOT` |
+| Comparison | `CMP` |
+| Control Flow | `JMP`, `JZ/JE`, `JNZ/JNE`, `CALL`, `RET`, `LOOP` |
+| System | `NOP`, `HLT` |
+
+---
 
 ## 🏗️ Architecture
 
@@ -44,19 +56,20 @@ An interactive, browser-based environment for learning 8086 assembly programming
 │  (TypeScript)   │                       │     (Python)     │
 │                 │                       │                  │
 │ • Monaco Editor │                       │ • CPU Emulator   │
-│ • Live UI       │                       │ • Memory Manager │
-│ • WebSocket     │                       │ • Instruction    │
-│   Client        │                       │   Set Handler    │
+│ • 3D Pin Viz    │                       │ • Memory Manager │
+│ • Live Dashboard│                       │ • Instruction    │
+│ • WebSocket     │                       │   Set Handler    │
 └─────────────────┘                       └──────────────────┘
 ```
 
 **Frontend**: React 18 + TypeScript + Vite + TailwindCSS + Monaco Editor  
 **Backend**: Python 3.12 + FastAPI + Uvicorn + WebSocket
 
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
-
 - Python 3.12+
 - Node.js 18+ and npm
 - Git
@@ -66,8 +79,8 @@ An interactive, browser-based environment for learning 8086 assembly programming
 #### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/JNR-10/8086-Simulator.git
-cd 8086-Simulator
+git clone https://github.com/RudrakshRakeshZodage/8086_Simulator.git
+cd 8086_Simulator
 ```
 
 #### 2. Backend Setup
@@ -75,12 +88,15 @@ cd 8086-Simulator
 ```bash
 cd backend
 python3 -m venv 8086Sim
-source 8086Sim/bin/activate  # On Windows: 8086Sim\Scripts\activate
+# Windows:
+8086Sim\Scripts\activate
+# macOS/Linux:
+# source 8086Sim/bin/activate
 pip install -r requirements.txt
 python3 main.py
 ```
 
-Server will start on `http://0.0.0.0:8000`
+Server starts at `http://0.0.0.0:8000`
 
 #### 3. Frontend Setup
 
@@ -92,111 +108,96 @@ npm install
 npm run dev
 ```
 
-Frontend will start on `http://localhost:5173`
+Frontend starts at `http://localhost:5173`
 
-### Access the Application
+---
 
-Open your browser and navigate to `http://localhost:5173`
+## 📖 Usage Examples
 
-## 📖 Usage
-
-### Example: Basic Arithmetic
-
+### Basic Arithmetic
 ```assembly
-; Simple arithmetic program
 MOV AX, 5      ; Load 5 into AX
 MOV BX, 3      ; Load 3 into BX
-ADD AX, BX     ; AX = AX + BX (5 + 3 = 8)
+ADD AX, BX     ; AX = 8  → ALU activates, ZF/SF flags update
 MOV CX, AX     ; Copy result to CX
-INC CX         ; Increment CX (8 + 1 = 9)
-SUB CX, 2      ; Subtract 2 from CX (9 - 2 = 7)
+INC CX         ; CX = 9
+SUB CX, 2      ; CX = 7
 ```
 
-### Example: Stack Operations
-
+### Stack Operations
 ```assembly
-; Stack demo
 MOV AX, 100h
 MOV BX, 200h
-PUSH AX        ; Push AX onto stack
-PUSH BX        ; Push BX onto stack
-POP DX         ; Pop into DX (gets BX value = 200h)
-POP SI         ; Pop into SI (gets AX value = 100h)
+PUSH AX        ; WR pin active, SP decrements
+PUSH BX
+POP DX         ; RD pin active, SP increments
+POP SI
 ```
 
-### Example: Memory Operations
-
+### Memory Read/Write
 ```assembly
-; Write and read from memory
-MOV AX, 1234h       ; Load value
-MOV [0x100], AX     ; Write to memory address 0x100
-MOV BX, [0x100]     ; Read from memory into BX
-ADD BX, 100h        ; Modify value
-MOV [0x102], BX     ; Write to address 0x102
+MOV AX, 1234h
+MOV [0x100], AX  ; ALE + WR pins activate
+MOV BX, [0x100]  ; ALE + RD pins activate
+ADD BX, 100h
+MOV [0x102], BX
 ```
 
-### Example: Loop
-
+### Loop
 ```assembly
-; Count from 1 to 5
-MOV CX, 5           ; Loop counter
-
+MOV CX, 5
 COUNT_LOOP:
-    MOV AX, CX      ; Move counter to AX
-    DEC CX          ; Decrement counter
-    JNZ COUNT_LOOP  ; Jump if not zero
-    
-HLT                 ; Stop execution
+    MOV AX, CX
+    DEC CX
+    JNZ COUNT_LOOP
+HLT
 ```
 
-## 🎯 Key Observations
+---
 
-- **MOV operations** → ALU stays idle (not an ALU operation)
-- **ADD/SUB/INC/DEC** → ALU lights up with purple border showing operands and result
-- **Memory writes** → Memory Access panel highlights with type and address
-- **Flags** → Update automatically based on operation results
+## 🎯 Educational Insights
+
+| Action | What you'll learn |
+|---|---|
+| `MOV AX, BX` | Internal CPU register transfer — no bus pins used |
+| `MOV [0x100], AX` | ALE latches address → WR goes LOW → data written |
+| `ADD AX, BX` | ALU activates, flags (ZF, SF, CF, OF) computed |
+| `PUSH AX` | SP decrements, WR pin active, stack segment used |
+| `JZ label` | ZF flag checked — CPU jumps only if zero |
+
+---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions welcome!
 
-### Development Workflow
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
+1. Fork this repo
+2. Create feature branch: `git checkout -b feature/YourFeature`
+3. Commit: `git commit -m 'Add YourFeature'`
+4. Push: `git push origin feature/YourFeature`
 5. Open a Pull Request
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+---
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+MIT License — see [LICENSE.md](LICENSE.md) for details.
 
 ## 🙏 Acknowledgments
 
-- Intel 8086 Architecture Reference
+- Intel 8086 Programmer's Reference Manual
 - Monaco Editor by Microsoft
 - FastAPI Framework
 - React Community
 
-## 📧 Contact
-
-LinkedIn: [https://www.linkedin.com/in/jainil-rana-ba0663224/](https://www.linkedin.com/in/jainil-rana-ba0663224/)
-**GitHub**: [@JNR-10](https://github.com/JNR-10)  
-**Project Link**: [https://github.com/JNR-10/8086-Simulator](https://github.com/JNR-10/8086-Simulator)
-
 ## 🔮 Future Enhancements
 
-- [ ] Support for more 8086 instructions (MUL, DIV, shifts, rotates)
-- [ ] Register-based memory addressing `[SI]`, `[DI]`, `[BX+SI]`
+- [ ] MUL, DIV, shift, and rotate instructions
+- [ ] Register-indirect addressing `[SI]`, `[BX+SI]`
 - [ ] Breakpoint support
-- [ ] Assembly code export/import
-- [ ] Instruction execution history
-- [ ] Dark/Light theme toggle
-- [ ] Mobile responsive design
+- [ ] Instruction history log
+- [ ] Export/import assembly files
 
 ---
 
-**Made with ❤️ for learning 8086 Assembly**
+**Made with ❤️ by [Rudraksh Rakesh Zodage](https://github.com/RudrakshRakeshZodage)**

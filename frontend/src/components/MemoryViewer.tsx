@@ -1,74 +1,75 @@
 import React from 'react';
 
 interface MemoryViewerProps {
-  memory?: number[];
-  startAddress?: number;
-  highlightAddress?: number | null;
+  memory: number[];
+  startAddress: number;
+  highlightAddress?: number;
 }
 
-export const MemoryViewer: React.FC<MemoryViewerProps> = ({ 
-  memory = [], 
-  startAddress = 0,
-  highlightAddress 
-}) => {
-  const formatHex = (value: number, digits: number = 2) => 
-    value.toString(16).toUpperCase().padStart(digits, '0');
+export const MemoryViewer: React.FC<MemoryViewerProps> = ({ memory, startAddress, highlightAddress }) => {
+  const rows = [];
+  const bytesPerRow = 16; // Increased density for single screen
 
-  const renderMemoryGrid = () => {
-    const rows: JSX.Element[] = [];
-    const bytesPerRow = 16;
-
-    for (let i = 0; i < Math.min(memory.length, 512); i += bytesPerRow) {
-      const address = startAddress + i;
-      const rowBytes = memory.slice(i, i + bytesPerRow);
-
-      rows.push(
-        <div key={address} className="flex items-center gap-2 font-mono text-sm">
-          <span className="text-yellow-400 font-semibold w-16">
-            {formatHex(address, 4)}:
-          </span>
-          <div className="flex gap-1">
-            {rowBytes.map((byte, idx) => {
-              const byteAddress = address + idx;
-              const isHighlighted = byteAddress === highlightAddress;
-              
-              return (
-                <span
-                  key={idx}
-                  className={`px-1 py-0.5 rounded transition-all ${
-                    isHighlighted
-                      ? 'bg-red-500 text-white font-bold shadow-lg'
-                      : byte !== 0
-                      ? 'text-green-400'
-                      : 'text-gray-600'
-                  }`}
-                >
-                  {formatHex(byte)}
-                </span>
-              );
-            })}
-          </div>
-          <span className="text-gray-500 ml-2">
-            {rowBytes.map(b => (b >= 32 && b <= 126 ? String.fromCharCode(b) : '.')).join('')}
-          </span>
-        </div>
-      );
-    }
-
-    return rows;
-  };
+  for (let i = 0; i < memory.length; i += bytesPerRow) {
+    rows.push(memory.slice(i, i + bytesPerRow));
+  }
 
   return (
-    <div className="bg-gray-800 p-4 rounded-lg shadow-lg h-full overflow-auto">
-      <h2 className="text-white font-bold text-xl mb-4 border-b border-gray-600 pb-2">
-        💾 Memory View
-      </h2>
-      <div className="space-y-1">
-        {memory.length > 0 ? (
-          renderMemoryGrid()
-        ) : (
-          <p className="text-gray-400 text-center py-8">No memory data loaded</p>
-        )}
+    <div className="glass-panel p-3 flex flex-col gap-2 min-h-0 min-w-0 flex-1 hardware-depth">
+      <div className="border-b border-white/10 pb-1.5 flex justify-between items-center">
+        <h2 className="text-white/30 font-black text-[9px] uppercase tracking-[0.2em] flex items-center gap-2">
+            RAM Workspace (0x00 - 0x1FF)
+        </h2>
+        <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full" />
+                <span className="text-[8px] text-yellow-500/70 font-black uppercase">Accessed</span>
+            </div>
+            <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 bg-white/40 rounded-full" />
+                <span className="text-[8px] text-white/30 font-black uppercase">Stored</span>
+            </div>
+        </div>
+      </div>
+      
+      <div className="flex-1 overflow-y-auto custom-scrollbar font-mono text-[9px]">
+        <table className="w-full border-collapse border-separate border-spacing-0.5">
+          <thead>
+            <tr className="text-white/10 font-black uppercase tracking-tighter">
+              <th className="p-1 text-left w-10">Addr</th>
+              {[...Array(bytesPerRow)].map((_, i) => (
+                <th key={i} className="p-1">{i.toString(16).toUpperCase()}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, rowIndex) => (
+              <tr key={rowIndex} className="border-b border-white/5 hover:bg-white/5 transition-colors group">
+                <td className="p-1 text-white/20 font-bold group-hover:text-blue-500/50 transition-colors">
+                  0x{(startAddress + rowIndex * bytesPerRow).toString(16).toUpperCase().padStart(2, '0')}
+                </td>
+                {row.map((byte, byteIndex) => {
+                  const currentAddr = startAddress + rowIndex * bytesPerRow + byteIndex;
+                  const isHighlighted = currentAddr === highlightAddress;
+                  return (
+                    <td 
+                      key={byteIndex} 
+                      className={`p-1 text-center font-bold tracking-tighter transition-all duration-200 border border-transparent ${
+                        isHighlighted 
+                          ? 'bg-blue-600 text-white rounded z-10' 
+                          : byte !== 0 
+                            ? 'text-white/80 bg-white/5 rounded-sm' 
+                            : 'text-white/5'
+                      }`}
+                    >
+                      {byte.toString(16).toUpperCase().padStart(2, '0')}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

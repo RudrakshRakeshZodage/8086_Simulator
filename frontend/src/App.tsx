@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CodeEditor } from './components/CodeEditor';
 import { Controls } from './components/Controls';
 import { RegisterPanel } from './components/RegisterPanel';
 import { FlagsPanel } from './components/FlagsPanel';
 import { MemoryViewer } from './components/MemoryViewer';
 import { CPUVisualization } from './components/CPUVisualization';
+import { PinsPanel } from './components/PinsPanel';
+import { ProcessFlow } from './components/ProcessFlow';
+import { ChangeSummary } from './components/ChangeSummary';
 import { useWebSocket } from './hooks/useWebSocket';
-import { ExecutionMode } from './types';
+import { ExecutionMode, CPUState } from './types';
 
 const DEFAULT_CODE = `; 8086 Assembly Example
 ; Simple arithmetic program
@@ -29,18 +32,30 @@ function App() {
   const [mode, setMode] = useState<ExecutionMode>('idle');
   const [speed, setSpeed] = useState(500);
   const [memory, setMemory] = useState<number[]>([]);
-
+  const [prevCpuState, setPrevCpuState] = useState<CPUState | null>(null);
+  
   const { isConnected, cpuState, error, sendMessage, registerHandler, clearError } = 
     useWebSocket('ws://localhost:8000/ws');
 
-  // Register event handlers once on mount
+  // Track state changes
+  const lastStateRef = useRef<CPUState | null>(null);
+  useEffect(() => {
+    if (cpuState !== lastStateRef.current) {
+      setPrevCpuState(lastStateRef.current);
+      lastStateRef.current = cpuState;
+    }
+  }, [cpuState]);
+
   useEffect(() => {
     const handlers = {
       program_loaded: () => setMode('paused'),
-      step_complete: () => {}, // CPU state updated automatically
       execution_complete: () => setMode('paused'),
       paused: () => setMode('paused'),
-      reset_complete: () => setMode('idle'),
+      reset_complete: () => {
+        setMode('idle');
+        setPrevCpuState(null);
+        lastStateRef.current = null;
+      },
       memory_data: (data: any) => setMemory(data.data),
     };
 
@@ -49,7 +64,6 @@ function App() {
     });
   }, [registerHandler]);
 
-  // Request memory data when CPU state changes
   useEffect(() => {
     if (cpuState && isConnected) {
       sendMessage({ command: 'get_memory', start: 0, length: 512 });
@@ -79,51 +93,34 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      {/* Header */}
-      <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
-        <div className="flex items-center justify-between">
+    <div className="h-screen p-4 overflow-hidden flex flex-col bg-[#0a0c12]">
+      {/* Header & Flow & Controls - COMBINED for space */}
+      <div className="flex justify-between items-center mb-4 glass-panel px-4 py-2 border-none bg-white/[0.02]">
+        <div className="flex items-center gap-6">
           <div>
-            <h1 className="text-3xl font-bold text-blue-400">🖥️ Visual 8086 Assembly Simulator</h1>
-            <p className="text-gray-400 text-sm mt-1">
-              Real-time CPU visualization and step-by-step execution
-            </p>
+            <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 glow-text-blue tracking-tighter">
+              8086 <span className="text-white opacity-50 font-light">VISUAL</span>
+            </h1>
           </div>
-          <div className="flex items-center gap-3">
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
-              isConnected ? 'bg-green-900' : 'bg-red-900'
+          <div className="h-8 w-[1px] bg-white/10" />
+          <div className="w-96">
+            <ProcessFlow isConnected={isConnected} mode={mode} />
+          </div>
+        </div>
+        
+        <div className="flex gap-4 items-center">
+            <div className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all duration-500 ${
+              isConnected 
+                ? 'bg-green-500/10 text-green-400 border-green-500/20 shadow-[0_0_10px_rgba(34,197,94,0.1)]' 
+                : 'bg-red-500/10 text-red-400 border-red-500/20'
             }`}>
-              <div className={`w-3 h-3 rounded-full ${
-                isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'
-              }`}></div>
-              <span className="text-sm font-medium">
-                {isConnected ? 'Connected' : 'Disconnected'}
-              </span>
+              {isConnected ? '● Online' : '○ Offline'}
             </div>
-          </div>
         </div>
-      </header>
+      </div>
 
-      {/* Error Display */}
-      {error && (
-        <div className="bg-red-900 border-l-4 border-red-500 text-red-200 p-4 mx-6 mt-4 rounded">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="font-bold">Error</p>
-              <p className="text-sm">{error}</p>
-            </div>
-            <button
-              onClick={clearError}
-              className="text-red-200 hover:text-white"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Controls */}
-      <div className="px-6 py-4">
+      {/* Controls Bar - More Compact */}
+      <div className="glass-panel px-4 py-2 mb-4 bg-white/[0.01]">
         <Controls
           mode={mode}
           speed={speed}
@@ -136,10 +133,21 @@ function App() {
         />
       </div>
 
-      {/* Main Content */}
-      <div className="px-6 pb-6 grid grid-cols-12 gap-4" style={{ height: 'calc(100vh - 240px)' }}>
-        {/* Left Column - Code Editor */}
-        <div className="col-span-5">
+      {/* Error Display - Floating Bottom Right to save space */}
+      {error && (
+        <div className="fixed bottom-6 right-6 z-50 bg-red-500/20 border border-red-500/50 text-red-200 p-4 rounded-xl backdrop-blur-xl flex justify-between items-center shadow-2xl animate-in fade-in slide-in-from-bottom-4">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">⚠️</span>
+            <p className="text-xs font-medium">{error}</p>
+          </div>
+          <button onClick={clearError} className="ml-4 p-1 hover:bg-white/10 rounded-full">✕</button>
+        </div>
+      )}
+
+      {/* Main Workspace Grid */}
+      <div className="main-grid flex-1 overflow-hidden">
+        {/* Editor Column */}
+        <div className="flex flex-col min-h-0 hardware-depth rounded-2xl">
           <CodeEditor
             code={code}
             onChange={setCode}
@@ -147,17 +155,25 @@ function App() {
           />
         </div>
 
-        {/* Middle Column - CPU Visualization */}
-        <div className="col-span-3 space-y-4 overflow-auto">
-          <CPUVisualization cpuState={cpuState} />
+        {/* Central Viz Column */}
+        <div className="flex flex-col gap-4 min-h-0 hardware-depth rounded-2xl">
+          <div className="flex-1 overflow-hidden">
+            <PinsPanel cpuState={cpuState} />
+          </div>
+          <div className="h-44">
+            <ChangeSummary prevCpuState={prevCpuState} currentCpuState={cpuState} />
+          </div>
         </div>
 
-        {/* Right Column - Registers & Flags */}
-        <div className="col-span-4 space-y-4 overflow-auto">
+        {/* Status Panels Column */}
+        <div className="flex flex-col gap-3 min-h-0 overflow-y-auto pr-1 flex-1 custom-scrollbar hardware-depth rounded-2xl p-2 bg-[#000]/10">
           {cpuState ? (
             <>
-              <RegisterPanel registers={cpuState.registers} ip={cpuState.ip} />
-              <FlagsPanel flags={cpuState.flags} />
+              <RegisterPanel registers={cpuState.registers} />
+              <div className="grid grid-cols-2 gap-3 min-h-[160px]">
+                <FlagsPanel flags={cpuState.flags} />
+                <CPUVisualization cpuState={cpuState} />
+              </div>
               <MemoryViewer
                 memory={memory}
                 startAddress={0}
@@ -165,8 +181,11 @@ function App() {
               />
             </>
           ) : (
-            <div className="bg-gray-800 p-8 rounded-lg text-center">
-              <p className="text-gray-400">Load a program to see CPU state</p>
+            <div className="glass-panel flex-1 flex flex-col items-center justify-center text-center opacity-50 grayscale">
+               <div className="text-6xl mb-4">⚙️</div>
+               <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest leading-relaxed">
+                 Waiting for instruction load...
+               </p>
             </div>
           )}
         </div>
@@ -176,3 +195,4 @@ function App() {
 }
 
 export default App;
+
